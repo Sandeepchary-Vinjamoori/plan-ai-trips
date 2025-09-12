@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { Link } from 'react-router-dom';
 import heroImage from '@/assets/hero-travel.jpg';
 
 const Hero = () => {
@@ -28,9 +29,11 @@ const Hero = () => {
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-slide-up">
-          <Button className="btn-hero shadow-hero">
-            Plan Your Trip
-          </Button>
+          <Link to="/plan-trip">
+            <Button className="btn-hero shadow-hero">
+              Plan Your Trip
+            </Button>
+          </Link>
           <Button 
             variant="outline" 
             className="bg-white/10 border-white/30 text-white hover:bg-white hover:text-primary backdrop-blur-sm"

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Link } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 
 const Header = () => {
@@ -30,12 +31,16 @@ const Header = () => {
 
           {/* Desktop Auth Buttons */}
           <div className="hidden md:flex items-center space-x-4">
-            <Button variant="ghost" size="sm" className="text-foreground hover:text-primary">
-              Login
-            </Button>
-            <Button className="btn-outline">
-              Register
-            </Button>
+            <Link to="/auth">
+              <Button variant="ghost" size="sm" className="text-foreground hover:text-primary">
+                Login
+              </Button>
+            </Link>
+            <Link to="/auth">
+              <Button className="btn-outline">
+                Register
+              </Button>
+            </Link>
           </div>
 
           {/* Mobile Menu Button */}
@@ -61,12 +66,16 @@ const Header = () => {
                 How it Works
               </a>
               <div className="flex flex-col space-y-2 pt-4">
-                <Button variant="ghost" size="sm" className="justify-start">
-                  Login
-                </Button>
-                <Button className="btn-outline justify-start">
-                  Register
-                </Button>
+                <Link to="/auth">
+                  <Button variant="ghost" size="sm" className="justify-start">
+                    Login
+                  </Button>
+                </Link>
+                <Link to="/auth">
+                  <Button className="btn-outline justify-start">
+                    Register
+                  </Button>
+                </Link>
               </div>
             </nav>
           </div>
