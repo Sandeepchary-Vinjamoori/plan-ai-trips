@@ -34,12 +34,14 @@ const Hero = () => {
               Plan Your Trip
             </Button>
           </Link>
-          <Button 
-            variant="outline" 
-            className="bg-white/10 border-white/30 text-white hover:bg-white hover:text-primary backdrop-blur-sm"
-          >
-            Watch Demo
-          </Button>
+          <Link to="/demo">
+            <Button 
+              variant="outline" 
+              className="bg-white/10 border-white/30 text-white hover:bg-white hover:text-primary backdrop-blur-sm"
+            >
+              Watch Demo
+            </Button>
+          </Link>
         </div>
 
         {/* Stats */}

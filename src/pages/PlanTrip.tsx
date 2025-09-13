@@ -37,8 +37,28 @@ const PlanTrip = () => {
   const [budget, setBudget] = useState([2500]);
   const [preferences, setPreferences] = useState<string[]>([]);
 
-  const budgetLabels = ['$500', '$1K', '$2.5K', '$5K', '$10K+'];
-  const budgetValues = [500, 1000, 2500, 5000, 10000];
+  const budgetOptions = [
+    { id: 'budget', label: 'Budget-Friendly', value: 50000, description: '₹30K - ₹50K' },
+    { id: 'affordable', label: 'Affordable', value: 100000, description: '₹50K - ₹1L' },
+    { id: 'luxurious', label: 'Luxurious', value: 250000, description: '₹1L - ₹2.5L' },
+    { id: 'custom', label: 'Custom', value: 500000, description: 'Set your own' }
+  ];
+  
+  const [budgetType, setBudgetType] = useState('affordable');
+  const [customBudget, setCustomBudget] = useState([100000]);
+  
+  // Mock destination data
+  const mockDestinations = [
+    'Mumbai, India', 'Delhi, India', 'Bangalore, India', 'Goa, India', 'Kerala, India',
+    'Rajasthan, India', 'Kashmir, India', 'Himachal Pradesh, India', 'Tamil Nadu, India',
+    'Paris, France', 'London, UK', 'New York, USA', 'Tokyo, Japan', 'Singapore',
+    'Dubai, UAE', 'Thailand', 'Bali, Indonesia', 'Maldives', 'Switzerland', 'Italy'
+  ];
+  
+  const [toSuggestions, setToSuggestions] = useState<string[]>([]);
+  const [fromSuggestions, setFromSuggestions] = useState<string[]>([]);
+  const [showToSuggestions, setShowToSuggestions] = useState(false);
+  const [showFromSuggestions, setShowFromSuggestions] = useState(false);
 
   const preferenceOptions = [
     { id: 'adventure', label: 'Adventure', icon: Mountain },
@@ -55,6 +75,49 @@ const PlanTrip = () => {
     );
   };
 
+  const handleFromInputChange = (value: string) => {
+    setFromLocation(value);
+    if (value.length > 1) {
+      const filtered = mockDestinations.filter(dest => 
+        dest.toLowerCase().includes(value.toLowerCase())
+      );
+      setFromSuggestions(filtered.slice(0, 5));
+      setShowFromSuggestions(true);
+    } else {
+      setShowFromSuggestions(false);
+    }
+  };
+
+  const handleToInputChange = (value: string) => {
+    setToLocation(value);
+    if (value.length > 1) {
+      const filtered = mockDestinations.filter(dest => 
+        dest.toLowerCase().includes(value.toLowerCase())
+      );
+      setToSuggestions(filtered.slice(0, 5));
+      setShowToSuggestions(true);
+    } else {
+      setShowToSuggestions(false);
+    }
+  };
+
+  const selectFromSuggestion = (suggestion: string) => {
+    setFromLocation(suggestion);
+    setShowFromSuggestions(false);
+  };
+
+  const selectToSuggestion = (suggestion: string) => {
+    setToLocation(suggestion);
+    setShowToSuggestions(false);
+  };
+
+  const getCurrentBudget = () => {
+    if (budgetType === 'custom') {
+      return customBudget[0];
+    }
+    return budgetOptions.find(option => option.id === budgetType)?.value || 100000;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -66,17 +129,13 @@ const PlanTrip = () => {
       endDate: endDate?.toISOString().split('T')[0] || '',
       adults: adults.toString(),
       children: children.toString(),
-      budget: budget[0].toString(),
+      budget: getCurrentBudget().toString(),
+      budgetType: budgetType,
       preferences: preferences.join(',')
     });
     
     // Navigate to itinerary page with trip data
     navigate(`/trip-itinerary?${tripParams.toString()}`);
-  };
-
-  const getBudgetLabel = (value: number) => {
-    const index = budgetValues.findIndex(v => v >= value);
-    return index >= 0 ? budgetLabels[index] : budgetLabels[budgetLabels.length - 1];
   };
 
   return (
@@ -125,7 +184,7 @@ const PlanTrip = () => {
               <form onSubmit={handleSubmit} className="space-y-8">
                 {/* Locations */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
+                  <div className="space-y-2 relative">
                     <Label htmlFor="from" className="text-base font-medium">From</Label>
                     <div className="relative">
                       <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -134,14 +193,32 @@ const PlanTrip = () => {
                         type="text"
                         placeholder="Departure city"
                         value={fromLocation}
-                        onChange={(e) => setFromLocation(e.target.value)}
+                        onChange={(e) => handleFromInputChange(e.target.value)}
+                        onFocus={() => fromLocation.length > 1 && setShowFromSuggestions(true)}
+                        onBlur={() => setTimeout(() => setShowFromSuggestions(false), 200)}
                         className="pl-10 pr-10 h-12"
                       />
                       <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     </div>
+                    
+                    {/* From Suggestions */}
+                    {showFromSuggestions && fromSuggestions.length > 0 && (
+                      <div className="absolute top-full left-0 right-0 z-50 bg-card border border-border rounded-lg shadow-lg mt-1 max-h-40 overflow-y-auto">
+                        {fromSuggestions.map((suggestion, index) => (
+                          <div
+                            key={index}
+                            className="px-4 py-2 hover:bg-secondary cursor-pointer text-sm"
+                            onClick={() => selectFromSuggestion(suggestion)}
+                          >
+                            <MapPin className="inline w-4 h-4 mr-2 text-muted-foreground" />
+                            {suggestion}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-2 relative">
                     <Label htmlFor="to" className="text-base font-medium">To</Label>
                     <div className="relative">
                       <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -150,11 +227,29 @@ const PlanTrip = () => {
                         type="text"
                         placeholder="Destination city"
                         value={toLocation}
-                        onChange={(e) => setToLocation(e.target.value)}
+                        onChange={(e) => handleToInputChange(e.target.value)}
+                        onFocus={() => toLocation.length > 1 && setShowToSuggestions(true)}
+                        onBlur={() => setTimeout(() => setShowToSuggestions(false), 200)}
                         className="pl-10 pr-10 h-12"
                       />
                       <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     </div>
+                    
+                    {/* To Suggestions */}
+                    {showToSuggestions && toSuggestions.length > 0 && (
+                      <div className="absolute top-full left-0 right-0 z-50 bg-card border border-border rounded-lg shadow-lg mt-1 max-h-40 overflow-y-auto">
+                        {toSuggestions.map((suggestion, index) => (
+                          <div
+                            key={index}
+                            className="px-4 py-2 hover:bg-secondary cursor-pointer text-sm"
+                            onClick={() => selectToSuggestion(suggestion)}
+                          >
+                            <MapPin className="inline w-4 h-4 mr-2 text-muted-foreground" />
+                            {suggestion}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -281,24 +376,51 @@ const PlanTrip = () => {
 
                 {/* Budget */}
                 <div className="space-y-4">
-                  <Label className="text-base font-medium">
-                    Budget Range: {getBudgetLabel(budget[0])}
-                  </Label>
-                  <div className="px-3">
-                    <Slider
-                      value={budget}
-                      onValueChange={setBudget}
-                      max={10000}
-                      min={500}
-                      step={100}
-                      className="w-full"
-                    />
-                    <div className="flex justify-between text-xs text-muted-foreground mt-2">
-                      {budgetLabels.map((label, index) => (
-                        <span key={index}>{label}</span>
-                      ))}
-                    </div>
+                  <Label className="text-base font-medium">Budget Type</Label>
+                  
+                  {/* Budget Type Options */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {budgetOptions.map((option) => (
+                      <div
+                        key={option.id}
+                        className={cn(
+                          "border-2 rounded-lg p-4 cursor-pointer transition-all text-center",
+                          "hover:shadow-md",
+                          budgetType === option.id 
+                            ? "border-primary bg-primary/5" 
+                            : "border-border hover:border-primary/50"
+                        )}
+                        onClick={() => setBudgetType(option.id)}
+                      >
+                        <div className="font-medium text-sm mb-1">{option.label}</div>
+                        <div className="text-xs text-muted-foreground">{option.description}</div>
+                      </div>
+                    ))}
                   </div>
+
+                  {/* Custom Budget Slider */}
+                  {budgetType === 'custom' && (
+                    <div className="mt-4 p-4 bg-secondary/30 rounded-lg">
+                      <Label className="text-sm font-medium mb-2 block">
+                        Custom Budget: ₹{(customBudget[0] / 1000).toFixed(0)}K
+                      </Label>
+                      <Slider
+                        value={customBudget}
+                        onValueChange={setCustomBudget}
+                        max={1000000}
+                        min={25000}
+                        step={5000}
+                        className="w-full"
+                      />
+                      <div className="flex justify-between text-xs text-muted-foreground mt-2">
+                        <span>₹25K</span>
+                        <span>₹1L</span>
+                        <span>₹2.5L</span>
+                        <span>₹5L</span>
+                        <span>₹10L+</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <Separator />
