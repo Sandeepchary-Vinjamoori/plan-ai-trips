@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Slider } from '@/components/ui/slider';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   MapPin, 
   Search, 
@@ -27,6 +27,7 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 const PlanTrip = () => {
+  const navigate = useNavigate();
   const [fromLocation, setFromLocation] = useState('');
   const [toLocation, setToLocation] = useState('');
   const [startDate, setStartDate] = useState<Date>();
@@ -56,17 +57,21 @@ const PlanTrip = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement trip generation
-    console.log('Trip data:', {
-      fromLocation,
-      toLocation,
-      startDate,
-      endDate,
-      adults,
-      children,
-      budget: budget[0],
-      preferences
+    
+    // Create URL params for trip data
+    const tripParams = new URLSearchParams({
+      from: fromLocation,
+      to: toLocation,
+      startDate: startDate?.toISOString().split('T')[0] || '',
+      endDate: endDate?.toISOString().split('T')[0] || '',
+      adults: adults.toString(),
+      children: children.toString(),
+      budget: budget[0].toString(),
+      preferences: preferences.join(',')
     });
+    
+    // Navigate to itinerary page with trip data
+    navigate(`/trip-itinerary?${tripParams.toString()}`);
   };
 
   const getBudgetLabel = (value: number) => {
