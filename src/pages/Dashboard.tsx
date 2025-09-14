@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,15 +11,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Plane, User, Settings, LogOut, Calendar, MapPin, Users, Share2 } from "lucide-react";
+import { Plane, Settings, LogOut, Calendar, MapPin, Users, Share2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { User as SupabaseUser } from "@supabase/supabase-js";
+import { useToast } from "@/hooks/use-toast";
 
-// Static user data - will be replaced with real data later
-const mockUser = {
-  name: "John Doe",
-  email: "john.doe@example.com",
-  avatar: "",
-  initials: "JD"
-};
+// This will be replaced with real user data from Supabase
 
 const mockTrips = [
   {
@@ -56,8 +53,19 @@ const mockTrips = [
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [user, setUser] = useState<SupabaseUser | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [selectedTrip, setSelectedTrip] = useState<any>(null);
+
+  useEffect(() => {
+    // Get current user
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    };
+    getUser();
+  }, []);
 
   const handlePlanTrip = () => {
     navigate("/plan-trip");
@@ -71,9 +79,25 @@ const Dashboard = () => {
     navigate("/edit-profile");
   };
 
-  const handleLogout = () => {
-    // For now, just redirect to home - will implement actual logout later
-    navigate("/");
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        throw error;
+      }
+      toast({
+        title: "Logged out",
+        description: "You have been logged out successfully.",
+      });
+      navigate("/");
+    } catch (error: any) {
+      console.error('Logout error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to log out. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleShare = (trip: any) => {
@@ -115,9 +139,9 @@ const Dashboard = () => {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                 <Avatar>
-                  <AvatarImage src={mockUser.avatar} alt={mockUser.name} />
+                  <AvatarImage src={user?.user_metadata?.avatar_url} alt={user?.user_metadata?.full_name || 'User'} />
                   <AvatarFallback className="bg-primary text-primary-foreground">
-                    {mockUser.initials}
+                    {(user?.user_metadata?.full_name || user?.email || 'U').charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
               </Button>
@@ -125,8 +149,8 @@ const Dashboard = () => {
             <DropdownMenuContent className="w-56" align="end">
               <div className="flex items-center justify-start gap-2 p-2">
                 <div className="flex flex-col space-y-1 leading-none">
-                  <p className="font-medium">{mockUser.name}</p>
-                  <p className="text-sm text-muted-foreground">{mockUser.email}</p>
+                  <p className="font-medium">{user?.user_metadata?.full_name || 'User'}</p>
+                  <p className="text-sm text-muted-foreground">{user?.email}</p>
                 </div>
               </div>
               <DropdownMenuSeparator />
@@ -153,7 +177,7 @@ const Dashboard = () => {
         {/* Welcome Section */}
         <div className="mb-8 text-center">
           <h1 className="mb-4 text-4xl font-bold text-foreground">
-            Welcome back, {mockUser.name} 👋
+            Welcome back, {user?.user_metadata?.full_name || user?.email || 'User'} 👋
           </h1>
           <p className="mb-6 text-lg text-muted-foreground">
             Ready to plan your next adventure?

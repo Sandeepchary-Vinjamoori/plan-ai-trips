@@ -4,13 +4,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Facebook, Chrome } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const Auth = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -64,11 +69,74 @@ const Auth = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (validateForm()) {
-      // TODO: Implement actual authentication with Supabase
-      console.log('Form submitted:', formData);
+    if (!validateForm()) return;
+
+    setIsLoading(true);
+    setErrors({});
+
+    try {
+      if (isLogin) {
+        // Handle login
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: formData.email,
+          password: formData.password,
+        });
+
+        if (error) {
+          throw error;
+        }
+
+        if (data.user) {
+          toast({
+            title: "Success!",
+            description: "You have been logged in successfully.",
+          });
+          navigate('/dashboard');
+        }
+      } else {
+        // Handle registration
+        const { data, error } = await supabase.auth.signUp({
+          email: formData.email,
+          password: formData.password,
+          options: {
+            data: {
+              full_name: formData.fullName,
+            }
+          }
+        });
+
+        if (error) {
+          throw error;
+        }
+
+        if (data.user) {
+          toast({
+            title: "Account Created!",
+            description: "Please check your email to verify your account.",
+          });
+          // Switch to login mode after successful registration
+          setIsLogin(true);
+          setFormData({
+            fullName: '',
+            email: formData.email, // Keep email for convenience
+            password: '',
+            confirmPassword: '',
+            rememberMe: false,
+            acceptTerms: false
+          });
+        }
+      }
+    } catch (error: any) {
+      console.error('Auth error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "An error occurred during authentication.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -226,8 +294,8 @@ const Auth = () => {
                 <p className="text-sm text-destructive">{errors.acceptTerms}</p>
               )}
 
-              <Button type="submit" className="w-full btn-hero">
-                {isLogin ? 'Sign In' : 'Create Account'}
+              <Button type="submit" className="w-full btn-hero" disabled={isLoading}>
+                {isLoading ? 'Please wait...' : isLogin ? 'Sign In' : 'Create Account'}
               </Button>
             </form>
 
