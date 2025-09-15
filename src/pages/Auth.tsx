@@ -6,7 +6,13 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Checkbox } from '@/components/ui/checkbox';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Facebook, Chrome } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { auth } from '@/integrations/firebase/config';
+import { 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword,
+  updateProfile,
+  signOut
+} from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 
 const Auth = () => {
@@ -79,16 +85,13 @@ const Auth = () => {
     try {
       if (isLogin) {
         // Handle login
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: formData.email,
-          password: formData.password,
-        });
+        const userCredential = await signInWithEmailAndPassword(
+          auth,
+          formData.email,
+          formData.password
+        );
 
-        if (error) {
-          throw error;
-        }
-
-        if (data.user) {
+        if (userCredential.user) {
           toast({
             title: "Success!",
             description: "You have been logged in successfully.",
@@ -97,24 +100,21 @@ const Auth = () => {
         }
       } else {
         // Handle registration
-        const { data, error } = await supabase.auth.signUp({
-          email: formData.email,
-          password: formData.password,
-          options: {
-            data: {
-              full_name: formData.fullName,
-            }
-          }
-        });
+        const userCredential = await createUserWithEmailAndPassword(
+          auth,
+          formData.email,
+          formData.password
+        );
 
-        if (error) {
-          throw error;
-        }
+        if (userCredential.user) {
+          // Update the user's display name
+          await updateProfile(userCredential.user, {
+            displayName: formData.fullName
+          });
 
-        if (data.user) {
           toast({
             title: "Account Created!",
-            description: "Please check your email to verify your account.",
+            description: "Your account has been created successfully.",
           });
           // Switch to login mode after successful registration
           setIsLogin(true);

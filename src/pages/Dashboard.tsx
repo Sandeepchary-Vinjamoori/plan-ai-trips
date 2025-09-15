@@ -12,8 +12,9 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Plane, Settings, LogOut, Calendar, MapPin, Users, Share2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { User as SupabaseUser } from "@supabase/supabase-js";
+import { auth } from "@/integrations/firebase/config";
+import { User as FirebaseUser } from "firebase/auth";
+import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 
 // This will be replaced with real user data from Supabase
@@ -54,17 +55,13 @@ const mockTrips = [
 const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [user, setUser] = useState<FirebaseUser | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [selectedTrip, setSelectedTrip] = useState<any>(null);
 
   useEffect(() => {
     // Get current user
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
-    };
-    getUser();
+    setUser(auth.currentUser);
   }, []);
 
   const handlePlanTrip = () => {
@@ -81,10 +78,7 @@ const Dashboard = () => {
 
   const handleLogout = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        throw error;
-      }
+      await signOut(auth);
       toast({
         title: "Logged out",
         description: "You have been logged out successfully.",
@@ -177,7 +171,7 @@ const Dashboard = () => {
         {/* Welcome Section */}
         <div className="mb-8 text-center">
           <h1 className="mb-4 text-4xl font-bold text-foreground">
-            Welcome back, {user?.user_metadata?.full_name || user?.email || 'User'} 👋
+            Welcome back, {user?.displayName || user?.email || 'User'} 👋
           </h1>
           <p className="mb-6 text-lg text-muted-foreground">
             Ready to plan your next adventure?
